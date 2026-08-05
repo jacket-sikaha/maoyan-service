@@ -6,7 +6,7 @@ on:
     branches: ['main']
     paths:
       - 'frontend/**'
-      - '.github/fe-deploy.yml'
+      - '.github/workflows/fe-deploy.yml'
   workflow_dispatch:
 
 permissions:
