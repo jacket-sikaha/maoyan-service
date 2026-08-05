@@ -3,8 +3,8 @@
 //   - response 拦截器：401 时自动清除本地登录态（token + user），防止过期 Token 残留
 //   - 超时 30s，baseURL=/api（开发时由 Vite proxy 转发到后端 8080）
 import axios from 'axios'
-
-const api = axios.create({ baseURL: '/api', timeout: 30000 })
+const baseURL = import.meta.env.DEV ? '/api' : `${import.meta.env.VITE_ORIGIN_SERVER}/api`
+const api = axios.create({ baseURL, timeout: 30000 })
 
 // 请求拦截：自动注入 JWT
 api.interceptors.request.use(config => {

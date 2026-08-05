@@ -1,1 +1,22 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/api/endpoints.ts","./src/components/navbar.tsx","./src/components/pinyincitypicker.tsx","./src/components/subscriptiondrawer.tsx","./src/pages/cinemacrawlrecordspage.tsx","./src/pages/homepage.tsx","./src/pages/loginpage.tsx","./src/pages/moviepricepage.tsx","./src/pages/pricechangespage.tsx","./src/pages/subscriptiondetailpage.tsx","./src/pages/subscriptionhistorypage.tsx","./src/pages/subscriptionspage.tsx","./src/store/auth.tsx"],"version":"5.9.3"}
+{
+  "root": [
+    "./src/app.tsx",
+    "./src/main.tsx",
+    "./src/api/client.ts",
+    "./src/api/endpoints.ts",
+    "./src/components/navbar.tsx",
+    "./src/components/pinyincitypicker.tsx",
+    "./src/components/subscriptiondrawer.tsx",
+    "./src/pages/cinemacrawlrecordspage.tsx",
+    "./src/pages/homepage.tsx",
+    "./src/pages/loginpage.tsx",
+    "./src/pages/moviepricepage.tsx",
+    "./src/pages/pricechangespage.tsx",
+    "./src/pages/subscriptiondetailpage.tsx",
+    "./src/pages/subscriptionhistorypage.tsx",
+    "./src/pages/subscriptionspage.tsx",
+    "./src/store/auth.tsx",
+    "./vite-env.d.ts"
+  ],
+  "version": "5.9.3"
+}
