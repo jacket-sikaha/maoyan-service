@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -25,7 +26,7 @@ import (
 // main.go — 猫眼票价监控服务入口
 func main() {
 	// ========== 1. 基础设施初始化 ==========
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
+	initLogger()
 
 	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
@@ -182,6 +183,61 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	slog.Info("shutting down...")
+}
+
+// initLogger 初始化日志：stdout（Info 级别）+ 文件（Warn 级别，./logs/app.log）
+func initLogger() {
+	_ = os.MkdirAll("logs", 0o755)
+	f, err := os.OpenFile("logs/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		slog.New(slog.NewJSONHandler(os.Stdout, nil)).Error("log file open failed", "error", err)
+		return
+	}
+
+	// stdout=Info（容器捕获）+ file=Warn（持久化）
+	stdoutW := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	fileW := slog.NewJSONHandler(f, &slog.HandlerOptions{Level: slog.LevelWarn})
+	slog.SetDefault(slog.New(ioMultiHandler{handlers: []slog.Handler{stdoutW, fileW}}))
+}
+
+// ioMultiHandler 扇出到多个 slog handler
+// Go 1.25 slog 无内置 multi handler，轻量实现
+type ioMultiHandler struct {
+	handlers []slog.Handler
+}
+
+func (h ioMultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, handler := range h.handlers {
+		if handler.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (h ioMultiHandler) Handle(ctx context.Context, r slog.Record) error {
+	for _, handler := range h.handlers {
+		if handler.Enabled(ctx, r.Level) {
+			_ = handler.Handle(ctx, r.Clone())
+		}
+	}
+	return nil
+}
+
+func (h ioMultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	handlers := make([]slog.Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		handlers[i] = handler.WithAttrs(attrs)
+	}
+	return ioMultiHandler{handlers}
+}
+
+func (h ioMultiHandler) WithGroup(name string) slog.Handler {
+	handlers := make([]slog.Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		handlers[i] = handler.WithGroup(name)
+	}
+	return ioMultiHandler{handlers}
 }
 
 // initDB 初始化 PostgreSQL 连接池

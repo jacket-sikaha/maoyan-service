@@ -41,3 +41,4 @@ dist/
 .swc
 *.local
 *.zip
+backend/logs/app.log

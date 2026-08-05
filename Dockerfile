@@ -22,8 +22,9 @@ RUN cd backend && CGO_ENABLED=0 GOOS=linux go build \
 # ── Runtime stage ──
 FROM alpine:3.20
 
-# 时区 + ca-cert（HTTPS 请求需要）
-RUN apk add --no-cache ca-certificates tzdata && \
+# 时区 + ca-cert + msttcorefonts（Arial 字体，猫眼字体解码需要）
+RUN apk add --no-cache ca-certificates tzdata msttcorefonts-installer fontconfig && \
+    update-ms-fonts && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
