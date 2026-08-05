@@ -28,5 +28,16 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+
+deploy_versions/
+node_modules/
+.rn_temp/
+.temp/
+dist/
+
+.DS_Store
+.swc
+*.local
+*.zip
