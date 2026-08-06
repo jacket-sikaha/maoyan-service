@@ -2,6 +2,8 @@
 
 > 猫眼电影票价监控与低价订阅通知系统 —— Go 后端 + React 前端，按影院级采集任务调度，自动追踪票价变化并在命中目标价时邮件通知。
 
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sikaha/maoyan-service)
+
 ## ✨ 核心特性
 
 - **🎟️ 票价查询** — 按城市/区县/电影实时查询全区影院排片票价，支持距离排序、CSV 导出
@@ -81,6 +83,9 @@ cron 触发 → 查询到期 CrawlTask → 逐影院调用猫眼 API
 
 ```
 maoyan-service/
+├── .github/workflows/
+│   ├── docker.yml            # Docker 镜像构建 & 推送（tag 触发）
+│   └── fe-deploy.yml         # 前端部署到 GitHub Pages
 ├── backend/
 │   ├── cmd/server/
 │   │   ├── main.go              # 入口：DB 初始化、DI 注入、路由注册、调度启动
@@ -107,6 +112,8 @@ maoyan-service/
 │   │   └── 001_init.sql         # 完整 DDL（7 张表 + 索引）
 │   ├── go.mod
 │   └── .env.template
+├── Dockerfile                # 多阶段构建：Go 编译 → Alpine 运行时（含 Arial 字体）
+├── docker-compose.yml        # 一键部署：端口映射 + 日志持久化 + migrations 挂载
 ├── frontend/
 │   ├── src/
 │   │   ├── api/                 # Axios 客户端 + 接口定义
@@ -139,10 +146,33 @@ maoyan-service/
 ### 环境要求
 
 - Go 1.25+
-- Node.js 18+
+- Node.js 18+（推荐 22 + pnpm）
 - PostgreSQL 15+（推荐 [Supabase](https://supabase.com) 免费托管）
+- Docker（可选，容器化部署）
 
-### 后端
+### 方式一：Docker Compose 部署（推荐）
+
+项目提供了 `docker-compose.yml`，一键拉起后端服务：
+
+```bash
+# 1. 准备环境变量文件
+#    参考 backend/.env.template，填入数据库连接串和 SMTP 配置
+
+# 2. 启动服务
+docker compose up -d
+
+# 3. 查看日志
+docker compose logs -f
+```
+
+容器特性：
+- 日志双写：stdout（json-file 轮转，100MB×3）+ 文件（`/app/logs/app.log`，warn 及以上）
+- migrations 目录只读挂载，方便热更新 SQL 而无需重新构建镜像
+- 时区 `Asia/Shanghai`，内置 Arial 字体（猫眼字体解码依赖）
+
+### 方式二：本地开发
+
+#### 后端
 
 ```bash
 cd backend
@@ -158,20 +188,22 @@ go mod tidy
 go run cmd/server/main.go
 ```
 
-### 前端
+#### 前端
 
 ```bash
 cd frontend
 
 # 1. 安装依赖
-pnpm install   # 或 npm install
+pnpm install
 
 # 2. 启动开发服务器
-pnpm dev       # 或 npm run dev
+pnpm dev
 
 # 3. 生产构建
-pnpm build
+pnpm build    # 需设置 VITE_ORIGIN_SERVER 环境变量指向后端地址
 ```
+
+> 前端 baseURL 根据环境自动切换：开发环境走 Vite proxy（`/api`），生产环境读取 `VITE_ORIGIN_SERVER` 环境变量。
 
 ### 验证
 
@@ -251,18 +283,9 @@ cinema                影院基础表（系统中心对象）
 
 ## ⚙️ 配置项
 
-| 环境变量 | 说明 | 默认值 |
-|----------|------|--------|
-| `PORT` | 服务端口 | `8080` |
-| `DB_DSN` | PostgreSQL 连接串 | — |
-| `SMTP_HOST` | SMTP 服务器地址 | — |
-| `SMTP_PORT` | SMTP 端口 | — |
-| `SMTP_USER` | SMTP 用户名 | — |
-| `SMTP_PASS` | SMTP 密码 | — |
-| `JWT_SECRET` | JWT 签名密钥 | — |
-| `MAOYAN_FETCH_INTERVAL_MIN` | 采集间隔（分钟） | `30` |
-| `MAOYAN_REQUEST_DELAY_MIN` | 请求延迟下限（秒） | `1.0` |
-| `MAOYAN_REQUEST_DELAY_MAX` | 请求延迟上限（秒） | `2.0` |
+后端通过 `.env` 文件配置，参考 `backend/.env.template`。主要包含：数据库连接串、SMTP 邮件配置、JWT 密钥、采集间隔与请求延迟等参数。
+
+前端生产构建时需设置 `VITE_ORIGIN_SERVER` 环境变量指向后端服务地址。
 
 ## 🔒 安全设计
 
@@ -271,6 +294,16 @@ cinema                影院基础表（系统中心对象）
 - **乐观锁** — 通知触发时通过 `CompareAndUpdateTriggeredPrice` 原子更新，防止并发重复通知
 - **密码哈希** — bcrypt 存储，JSON 响应中隐藏 `password_hash`
 - **请求节流** — 猫眼 API 调用间随机延迟，避免被封禁
+- **日志持久化** — warn 及以上级别同时写入文件（`logs/app.log`）和 stdout，容器环境双写保障
+
+## 🔁 CI/CD
+
+项目通过 GitHub Actions 实现自动化构建与部署：
+
+| Workflow | 触发条件 | 说明 |
+|----------|----------|------|
+| `docker.yml` | 推送 `v*` tag / 手动触发 | 构建多架构 Docker 镜像并推送到 Docker Hub，支持 GHA 缓存和构建证明 |
+| `fe-deploy.yml` | `main` 分支 `frontend/` 变更 / 手动触发 | 前端构建并部署到 GitHub Pages，使用 pnpm + Node 22 |
 
 ## 📜 License
 
