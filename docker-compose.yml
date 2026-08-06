@@ -1,0 +1,20 @@
+services:
+  backend:
+    image: docker.io/sikaha/maoyan-service:latest
+    container_name: maoyan-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      # Warn+ 级别日志持久化（Go 代码写入 /app/logs/app.log）
+      - ./logs:/app/logs
+      # migrations 文件外部覆盖（方便热更新 SQL 而无需重新构建镜像）
+      - ./backend/migrations:/app/migrations:ro
+    logging:
+      # stdout 日志也持久化到宿主机，最大 100MB x 3 个文件轮转
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
