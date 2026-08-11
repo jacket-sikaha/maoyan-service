@@ -125,7 +125,6 @@ func (r *cinemaRepo) Create(ctx context.Context, cinema *model.Cinema) error {
 }
 
 func (r *cinemaRepo) Upsert(ctx context.Context, cinema *model.Cinema) error {
-	r.db.WithContext(ctx)
 	return r.db.WithContext(ctx).Save(cinema).Error
 }
 
@@ -611,6 +610,7 @@ func (r *notifyLogRepo) FindByUserID(ctx context.Context, userID uuid.UUID, star
 	err := query.Order("notify_log.created_at DESC").Offset(offset).Limit(pageSize).Find(&logs).Error
 	return logs, total, err
 }
+
 
 // FindRecentBySubscription 查询订阅近期的通知记录（冷却判断用）
 func (r *notifyLogRepo) FindRecentBySubscription(ctx context.Context, subID uint64, since time.Duration) (*model.NotifyLog, error) {
