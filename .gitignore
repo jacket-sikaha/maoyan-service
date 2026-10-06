@@ -42,3 +42,4 @@ dist/
 *.local
 *.zip
 backend/logs/app.log
+.workbuddy/

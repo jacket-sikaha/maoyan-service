@@ -98,7 +98,7 @@ export default function SubscriptionDetailPage() {
     try {
       const values = await editForm.validateFields()
       const data: any = {}
-      if (values.email != null) data.email = values.email
+      // email 后端不接受修改（锁定为账号邮箱），不再提交
       if (values.target_price != null) data.target_price = Number(values.target_price)
       if (values.notify_enabled != null) data.notify_enabled = values.notify_enabled
       if (values.remark != null) data.remark = values.remark
@@ -403,6 +403,7 @@ export default function SubscriptionDetailPage() {
           cancelText="取消"
         >
           <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
+            {/* 通知邮箱锁定为账号邮箱：后端不允许修改（防止 email 与订阅归属错位），仅展示 */}
             <Form.Item
               label="通知邮箱"
               name="email"
@@ -410,8 +411,9 @@ export default function SubscriptionDetailPage() {
                 { required: true, message: '请输入邮箱' },
                 { type: 'email', message: '请输入有效邮箱' },
               ]}
+              extra="通知邮箱固定为账号邮箱，不可修改"
             >
-              <Input placeholder="通知邮箱地址" />
+              <Input readOnly style={{ color: 'rgba(255,255,255,0.65)', cursor: 'default' }} />
             </Form.Item>
             <Form.Item label="目标票价" name="target_price">
               <InputNumber prefix="¥" placeholder="例如 35.0" min={0} step={0.1} style={{ width: '100%' }} />

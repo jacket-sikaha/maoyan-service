@@ -322,11 +322,12 @@ type SubscriptionFullInfo struct {
 	CinemaAddress string `json:"cinema_address,omitempty"`
 }
 
-// SubscriptionUpdateReq 更新订阅请求（允许修改目标票价、备注、状态）
+// SubscriptionUpdateReq 更新订阅请求（允许修改目标票价、备注、状态、通知开关）
 type SubscriptionUpdateReq struct {
-	TargetPrice *float64 `json:"target_price,omitempty"` // 新目标票价，必须 ≤ initial_target_price
-	Remark      *string  `json:"remark,omitempty"`
-	Status      *int8    `json:"status,omitempty"` // 0=停用, 1=启用
+	TargetPrice   *float64 `json:"target_price,omitempty"`   // 新目标票价，必须 ≤ initial_target_price
+	Remark        *string  `json:"remark,omitempty"`
+	Status        *int8    `json:"status,omitempty"`         // 0=停用, 1=启用
+	NotifyEnabled *bool    `json:"notify_enabled,omitempty"` // 是否启用邮件通知
 }
 
 // --- 订阅详情 DTO ---

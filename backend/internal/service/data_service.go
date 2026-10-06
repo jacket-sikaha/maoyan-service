@@ -373,9 +373,18 @@ func (s *DataService) ensureCrawlTask(ctx context.Context, cinemaID uint64) {
 }
 
 // CreateSubscription 创建订阅
-// 流程：用猫眼影院 ID 查/建 cinema 记录 → 去重检查（cinema_id + email 唯一）→ 写入 subscription → 确保有采集任务
+// 流程：校验通知邮箱归属 → 去重检查（cinema_id + email 唯一）→ 写入 subscription → 确保有采集任务
 func (s *DataService) CreateSubscription(ctx context.Context, userID uuid.UUID, req model.SubscriptionReq) (*model.SubscribeResponse, error) {
-	// Step 1: 用猫眼影院 ID 查 cinema 记录，查不到则创建
+	// Step 1: 校验通知邮箱必须与登录账号一致
+	// 防止 email 与 user_id 归属错位：列表按 email 查、权限按 user_id 校验，
+	// 若允许填他人邮箱，会出现"看得到但无权操作"的幽灵订阅
+	user, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("用户不存在")
+	}
+	if req.Email != user.Email {
+		return nil, fmt.Errorf("通知邮箱必须与登录账号邮箱一致（%s）", user.Email)
+	}
 
 	// Step 2: 去重 — 同一影院+同一电影+同一邮箱只能订阅一次
 	if req.MovieID != "" {
@@ -777,6 +786,9 @@ func (s *DataService) UpdateSubscription(ctx context.Context, userID uuid.UUID, 
 			return fmt.Errorf("状态值无效")
 		}
 		updates["status"] = *req.Status
+	}
+	if req.NotifyEnabled != nil {
+		updates["notify_enabled"] = *req.NotifyEnabled
 	}
 
 	if len(updates) == 0 {
